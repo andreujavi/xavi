@@ -12,14 +12,9 @@
         .app-title { font-size: 1.1rem; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .live-badge { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); padding: 3px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
         .camera-section { position: relative; width: 100%; height: 38vh; background: #000; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
-        
-        /* Local: Silenciado para evitar el eco en tus propios altavoces */
         #localVideo { width: 100%; height: 100%; object-fit: cover; background: #1a1a1a; }
-        
-        /* Remota: CON SONIDO (sin atributo muted) para escuchar al otro */
         #remoteVideo { position: absolute; bottom: 14px; right: 14px; width: 115px; height: 155px; object-fit: cover; border: 2px solid #f59e0b; border-radius: 12px; background: #222; box-shadow: 0 8px 20px rgba(0,0,0,0.7); z-index: 10; }
         .remote-label { position: absolute; bottom: 150px; right: 14px; background: rgba(245, 158, 11, 0.9); color: #0b0f19; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 4px; z-index: 11; text-transform: uppercase; }
-        
         .chat-section { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #0f172a; }
         .message { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 0.85rem; word-break: break-word; }
         .message.incoming { background: #1e293b; color: #e2e8f0; align-self: flex-start; border: 1px solid rgba(255, 255, 255, 0.04); }
@@ -42,16 +37,14 @@
         </header>
 
         <div class="camera-section">
-            <!-- Tu cámara propia (silenciada para evitar eco en tus propios altavoces) -->
             <video id="localVideo" autoplay playsinline muted></video>
             <span class="remote-label">Remota</span>
-            <!-- Cámara remota (CON AUDIO ACTIVO) -->
             <video id="remoteVideo" autoplay playsinline></video>
             <img id="remoteImageFallback" style="position:absolute; bottom:14px; right:14px; width:115px; height:155px; object-fit:cover; border:2px solid #f59e0b; border-radius:12px; display:none; z-index:10;" />
         </div>
 
         <div class="chat-section" id="chatSection">
-            <div class="message incoming">¡Bienvenidos a El Pirulo de Xavi! 🚀 Haz clic en cualquier parte para activar el audio.</div>
+            <div class="message incoming">¡Bienvenidos a El Pirulo de Xavi! 🚀</div>
         </div>
 
         <div class="controls-section">
@@ -78,40 +71,25 @@
         let localStream, peerConnection, remoteId = null;
         const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-        // Desbloquear audio del navegador al primer toque o clic del usuario
-        window.addEventListener('click', () => {
-            if (remoteVideo.paused) {
-                remoteVideo.play().catch(() => {});
-            }
-        }, { once: true });
-
-        // Captura de cámara y micrófono con cancelación de eco avanzada
-        navigator.mediaDevices.getUserMedia({ 
-            video: true, 
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true
-            } 
-        })
-        .then(stream => {
-            localStream = stream;
-            localVideo.srcObject = stream;
-            socket.emit('ready-to-chat');
-            
-            // Respaldo de vídeo por socket si la red bloquea WebRTC
-            setInterval(() => {
-                if (remoteVideo.paused && localVideo.readyState === localVideo.HAVE_ENOUGH_DATA) {
-                    const canvas = document.getElementById('canvas');
-                    canvas.width = 160;
-                    canvas.height = 120;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
-                    socket.emit('video-frame', canvas.toDataURL('image/jpeg', 0.5));
-                }
-            }, 250);
-        })
-        .catch(err => console.error("Error al acceder a la webcam o micrófono:", err));
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                localStream = stream;
+                localVideo.srcObject = stream;
+                socket.emit('ready-to-chat');
+                
+                // Respaldo de vídeo por socket si la red bloquea WebRTC
+                setInterval(() => {
+                    if (remoteVideo.paused && localVideo.readyState === localVideo.HAVE_ENOUGH_DATA) {
+                        const canvas = document.getElementById('canvas');
+                        canvas.width = 160;
+                        canvas.height = 120;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(localVideo, 0, 0, canvas.width, canvas.height);
+                        socket.emit('video-frame', canvas.toDataURL('image/jpeg', 0.5));
+                    }
+                }, 250);
+            })
+            .catch(err => console.error("Error webcam:", err));
 
         socket.on('video-frame', (data) => {
             if (remoteVideo.paused || !remoteVideo.srcObject) {
@@ -125,16 +103,11 @@
             remoteId = target;
             peerConnection = new RTCPeerConnection(rtcConfig);
             
-            // IMPORTANTE: Añadir tanto la pista de vídeo como la de audio al canal P2P
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
-            });
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
             
-            // Recibir el flujo remoto (vídeo + audio)
             peerConnection.ontrack = (event) => {
                 if (remoteVideo.srcObject !== event.streams[0]) {
                     remoteVideo.srcObject = event.streams[0];
-                    remoteVideo.play().catch(() => {});
                     remoteImageFallback.style.display = 'none';
                 }
             };
@@ -169,7 +142,7 @@
             if (peerConnection) await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
         });
 
-        // --- GESTIÓN DE CHAT ---
+        // --- GESTIÓN DE CHAT Y MENSAJES RESTAURADA ---
         function appendMessage(text, senderName = 'Tú') {
             const chat = document.getElementById('chatSection');
             const msg = document.createElement('div');
@@ -200,5 +173,7 @@
             appendMessage(data.content, data.sender);
         });
     </script>
+
+    <script src="./app.js"></script>
 </body>
 </html>
