@@ -1,0 +1,96 @@
+@import "tailwindcss";
+/* Contenedor principal adaptable */
+.container {
+    display: flex;
+    flex-direction: column; /* En móviles se apila verticalmente */
+    gap: 16px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Tarjetas o secciones flexibles */
+.card {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    width: 100%;
+}
+
+/* --- Media Query para Tablets y pantallas medianas (A partir de 768px) --- */
+@media (min-width: 768px) {
+    .container {
+        flex-direction: row; /* Pasa a distribuirse en horizontal */
+        flex-wrap: wrap;
+    }
+
+    .card {
+        flex: 1 1 calc(50% - 16px); /* Dos columnas que ocupan el 50% cada una */
+    }
+}
+
+/* --- Media Query para Monitores / Pantallas Grandes (A partir de 1024px) --- */
+@media (min-width: 1024px) {
+    .card {
+        flex: 1 1 calc(33.333% - 16px); /* Tres columnas en pantallas grandes */
+    }
+}
+@import "tailwindcss";
+
+:root {
+    --primary-color: #6366f1;
+    --bg-main: #1e293b; /* Fondo gris profesional */
+}
+
+body {
+    background-color: var(--bg-main);
+    color: #f1f5f9;
+    font-family: system-ui, -apple-system, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.glass-panel {
+    background: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bg-primary { background-color: var(--primary-color); }
+.text-primary { color: var(--primary-color); }
+.border-primary { border-color: var(--primary-color); }
+
+/* Scrollbars limpios */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Video local (principal) */
+#localVideo {
+    width: 100%;
+    height: auto;
+    display: block;
+    transform: scaleX(-1); /* Opcional: efecto espejo para la cámara propia */
+}
+
+/* Video remoto (superpuesto / PiP) */
+.pip-video {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 25%; /* Ajusta el tamaño flotante a tu gusto */
+    max-width: 200px;
+    height: auto;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    object-fit: cover;
+    z-index: 10;
+    background: #222;
+}

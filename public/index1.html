@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniChat Pro - Cámaras y Chat Unificado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+
+<style>
+    :root {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --accent-color: #3b82f6;
+        --accent-hover: #2563eb;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --border-color: #334155;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-main);
+        height: 100vh;
+        display: flex;
+        overflow: hidden;
+    }
+
+    /* Layout Principal */
+    .app-container {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Barra Lateral - 5 Contactos */
+    .sidebar {
+        background-color: var(--bg-secondary);
+        border-right: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sidebar-header {
+        padding: 20px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .contact-list {
+        list-style: none;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: background 0.2s;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .contact-item:hover, .contact-item.active {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    .contact-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--accent-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .contact-info h4 {
+        font-size: 0.95rem;
+        margin-bottom: 2px;
+    }
+
+    .contact-info span {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* Área de Chat y Multimedia */
+    .chat-area {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background-color: var(--bg-primary);
+    }
+
+    /* Contenedor de Webcam en Vivo */
+    .webcam-container {
+        position: relative;
+        width: 100%;
+        max-height: 220px;
+        background-color: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .webcam-video {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    /* Clase para rotar la cámara dinámicamente */
+    .webcam-video.rotate-90 { transform: rotate(90deg); }
+    .webcam-video.rotate-180 { transform: rotate(180deg); }
+    .webcam-video.rotate-270 { transform: rotate(270deg); }
+    .webcam-video.mirror { transform: scaleX(-1); }
+
+    .webcam-controls {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: flex;
+        gap: 8px;
+    }
+
+    .control-btn {
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        backdrop-filter: blur(4px);
+    }
+
+    .control-btn:hover {
+        background: var(--accent-color);
+    }
+
+    /* Mensajes */
+    .messages-container {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .message {
+        max-width: 65%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        line-height: 1.4;
+        position: relative;
+    }
+
+    .message.received {
+        background-color: var(--bg-secondary);
+        align-self: flex-start;
+        border-bottom-left-radius: 2px;
+    }
+
+    .message.sent {
+        background-color: var(--accent-color);
+        align-self: flex-end;
+        border-bottom-right-radius: 2px;
+    }
+
+    /* Tipos de Contenido Especiales (Audio, Archivos, Stickers) */
+    .msg-audio {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 200px;
+    }
+
+    .msg-file {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+
+    .msg-sticker {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        background: transparent;
+    }
+
+    /* Barra de Entrada */
+    .input-bar {
+        padding: 15px 20px;
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .input-bar input[type="text"] {
+        flex: 1;
+        background-color: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        padding: 10px 15px;
+        border-radius: 8px;
+        color: var(--text-main);
+        outline: none;
+    }
+
+    .input-bar input[type="text"]:focus {
+        border-color: var(--accent-color);
+    }
+
+    .action-icon-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: color 0.2s;
+    }
+
+    .action-icon-btn:hover {
+        color: var(--accent-color);
+    }
+
+    .send-btn {
+        background-color: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .send-btn:hover {
+        background-color: var(--accent-hover);
+    }
+</style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- CABECERA -->
+    <header class="glass-panel border-b border-white/10 px-4 md:px-6 py-3 flex justify-between items-center shrink-0">
+        <h1 class="font-bold text-sm tracking-wider">OMNICHAT <span class="text-[10px] text-primary font-light px-2 py-0.5 bg-black/30 rounded-full border border-white/15">PRO 2026</span></h1>
+        <div class="flex items-center gap-3 bg-black/20 px-3 py-1.5 rounded-xl border border-white/5">
+            <label class="text-[10px] text-slate-400 uppercase font-bold">Tema:</label>
+            <input type="color" id="color-picker" value="#6366f1" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+        </div>
+    </header>
+
+    <!-- CONTENEDOR PRINCIPAL (UNA SOLA PANTALLA) -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 p-3 md:p-4 overflow-y-auto lg:overflow-hidden">
+
+        <!-- COLUMNA IZQUIERDA: Cámaras (Personal y Remota) + Notas -->
+        <section class="lg:col-span-4 flex flex-col gap-3 overflow-y-auto">
+            
+            <!-- Webcam Personal -->
+            <div class="glass-panel rounded-2xl p-3 flex flex-col shrink-0">
+                <h2 class="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">📹 Webcam Personal</h2>
+                <div class="relative bg-black rounded-xl overflow-hidden aspect-video border border-white/5 flex items-center justify-center">
+                   <video id="localVideo" autoplay playsinline muted class="personal-cam"></video>
+                </div>
+            </div>
+
+            <!-- Cámara Remota -->
+            <div class="glass-panel rounded-2xl p-3 flex flex-col shrink-0">
+                <h2 class="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">📡 Cámara Remota</h2>
+                <div class="relative bg-black rounded-xl overflow-hidden aspect-video border border-white/5 flex items-center justify-center">
+                   <video id="remoteVideo" autoplay playsinline class="remote-cam"></video>
+                    <div id="remote-placeholder" class="absolute text-xs text-slate-500">Esperando conexión de vídeo...</div>
+                </div>
+            </div>
+
+            <!-- Notas Personales -->
+            <div class="glass-panel rounded-2xl p-3 flex flex-col flex-1 min-h-[120px]">
+                <h2 class="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">📝 Notas Rápidas</h2>
+                <textarea id="personal-notes" placeholder="Apunta recordatorios..." class="w-full flex-1 bg-black/20 border border-white/5 rounded-xl p-2 text-xs text-slate-200 resize-none focus:outline-none focus:border-primary"></textarea>
+            </div>
+        </section>
+
+        <!-- COLUMNA CENTRAL: Chat y Multimedia -->
+        <section class="lg:col-span-5 glass-panel rounded-2xl flex flex-col h-[450px] lg:h-full overflow-hidden">
+            <div class="p-3 border-b border-white/10 text-xs font-bold text-slate-300 uppercase tracking-wider flex justify-between items-center">
+                <span>💬 Chat en Vivo</span>
+                <span class="text-[10px] text-emerald-400 font-normal">Conectado</span>
+            </div>
+            
+            <!-- Historial -->
+            <div id="chat-messages" class="flex-1 p-3 overflow-y-auto space-y-3 flex flex-col">
+                <div class="text-center text-slate-500 text-xs my-auto">Envía un mensaje, archivo, nota de voz o sticker.</div>
+            </div>
+
+            <!-- Panel de Stickers -->
+            <div id="sticker-picker" class="bg-black/40 border-t border-white/10 p-2 grid grid-cols-6 gap-2 hidden">
+                <button class="sticker-btn text-2xl hover:scale-125 transition cursor-pointer">🔥</button>
+                <button class="sticker-btn text-2xl hover:scale-125 transition cursor-pointer">🚀</button>
+                <button class="sticker-btn text-2xl hover:scale-125 transition cursor-pointer">💻</button>
+                <button class="sticker-btn text-2xl hover:scale-125 transition cursor-pointer">🍻</button>
+                <button class="sticker-btn text-2xl hover:scale-125 transition cursor-pointer">⭐</button>
+                <button class="sticker-btn text-2xl hover:scale-125 transition cursor-pointer">🎉</button>
+            </div>
+
+            <!-- Controles de Mensajería -->
+            <div class="p-3 bg-black/20 border-t border-white/10 flex items-center gap-2">
+                <button id="btn-toggle-stickers" class="text-slate-400 hover:text-primary text-lg p-1.5 transition cursor-pointer" title="Stickers">😀</button>
+                <label class="text-slate-400 hover:text-primary cursor-pointer text-lg p-1.5 transition" title="Enviar Archivo">
+                    📎 <input type="file" id="file-input" class="hidden">
+                </label>
+                <button id="btn-record-audio" class="text-slate-400 hover:text-rose-400 text-lg p-1.5 transition cursor-pointer" title="Mantener para Nota de Voz">🎙️</button>
+                
+                <input type="text" id="chat-input" placeholder="Escribe un mensaje..." class="flex-1 bg-black/30 border border-white/5 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-primary">
+                <button id="btn-send-msg" class="bg-primary text-white hover:opacity-90 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer">Enviar</button>
+            </div>
+        </section>
+
+        <!-- COLUMNA DERECHA: Centro de Archivos Compartidos -->
+        <section class="lg:col-span-3 glass-panel rounded-2xl p-3 flex flex-col h-[200px] lg:h-full overflow-hidden">
+            <h2 class="text-[10px] font-bold text-primary uppercase tracking-wider mb-2">📂 Archivos Recibidos</h2>
+            <div id="media-sidebar" class="flex-1 overflow-y-auto space-y-2 pr-1">
+                <div class="text-xs text-slate-500 text-center py-6">No hay archivos compartidos.</div>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
