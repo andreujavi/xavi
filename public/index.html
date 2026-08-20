@@ -71,7 +71,8 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+
+        const socket = io('https://xavi-gqjf.onrender.com');
         const localVideo = document.getElementById('localVideo');
         const remoteVideo = document.getElementById('remoteVideo');
         const remoteImageFallback = document.getElementById('remoteImageFallback');
